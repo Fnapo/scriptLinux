@@ -1,0 +1,95 @@
+#!/bin/bash
+# Codigos de error para exit
+E_MESORANIO=21
+E_MES=22
+E_ANIO=23
+E_MASDOS=24 
+
+# Otras variables
+MISCRIPT=`basename $0` # Nombre del script sin path
+_mesOut=''
+_reglaAnio='^[0-9]{2,4}$'
+_reglaMesAnio='^[1-9]{1,4}$'
+_ayuda="El comando ${MISCRIPT} muestra un calendio del [mes o año] o [mes y año] especificado\n
+        \r\t\tCOMANDO: ${MISCRIPT} [mes|anio] [anio]\n
+        \rArgumentos del comando:\n
+        \r -help \t --> \t Indicaciones de como usar el comando\n
+        \r mes \t --> \t Argumento que acepta valores numericos [1-12] y abreviatura o \n\t\t nombre de los meses en español o ingles tales como: [ene,enero,\n\r \t\t jan,january], NO SENSIBLE a mayusculas\n
+        \r anio \t --> \t Argumento que acepta valores numericos mayores a CERO"
+
+# Función que obtiene la abreviatura del mes para ejecutarla como argumento del comando 'cal'
+obtenerMes()
+{  
+   case ${1,,} in # ${1,,} realiza una conversión a minuscula del texto de entrada
+      1|ene|jan|enero|january)
+         _mesOut='ene';;
+      2|feb|febrero|february)
+         _mesOut='feb';;
+      3|mar|marzo|march)
+         _mesOut='mar';;
+      4|abr|apr|abril|april)
+         _mesOut='abr';;
+      5|may|mayo)
+         _mesOut='may';;
+      6|jun|junio|june)
+         _mesOut='jun';;
+      7|jul|julio|july)
+         _mesOut='jul';;
+      8|ago|aug|agosto|august)
+         _mesOut='ago';;
+      9|sep|septiembre|september)
+         _mesOut='sep';;
+      10|oct|octubre|october)
+         _mesOut='oct';;
+      11|nov|noviembre|november)
+         _mesOut='nov';;
+      12|dic|dec|diciembre|december)
+         _mesOut='dic';;
+      *)
+         _mesOut='error';;
+   esac
+}
+
+# Función que imprime el mes del calendario
+imprimirMes()
+{
+   obtenerMes $1
+   if [ $_mesOut == 'error' ]; then # validamos si el mes es correcto            
+      echo "Uso: ${MISCRIPT} [mes|anio], argumento incorrecto, ir a la documentación de ayuda" >&2; exit ${E_MESORANIO}
+   else
+      cal $_mesOut # imprime el calendario del mes y del año actual
+   fi
+}
+
+# Case que verifica el número de argumentos pasados al script
+case $# in
+   0)
+      cal;; # si no hay argumentos se imprime el caledario del mes y año actual
+   1)
+      case $1 in
+         [1-9]|1[0-2]) # valida si el argumento es un entero entre 1 y 12, nota: primero validamos esta opción ya los valores del 1 a 12 seran considerados como meses
+            imprimirMes $1;;
+         -help) # valida si la entrada es un argumento de ayuda
+            echo -e $_ayuda;;
+         *) # cualquier otro valor
+            if [[ $1 =~ $_reglaAnio ]]; then # verifica si el argumento es un entero, para considerarlo como año
+               cal $1 # imprime el calendario del año pasado
+            else
+               imprimirMes $1 # imprime en calendario el mes pasado o imprime un mensaje de error si el mes es incorrecto
+            fi;;
+      esac;;
+   2)
+      obtenerMes $1 # obtenemos el mes del primer argumento
+      if [ $_mesOut == 'error' ]; then # verificamos si el argumento corresponde a un mes            
+         echo "Uso: ${MISCRIPT} [mes] [anio], el argumento MES es incorrecto " >&2; exit ${E_MES} # mensaje de error si el mes es incorrecto
+      fi
+      if [[ $2 =~ $_reglaMesAnio ]]; then # verificamos que el segundo argumento sea un numero
+         cal $_mesOut $2 # imprime el calendario con el mes y año pasados al comando
+      else
+         echo "Uso: ${MISCRIPT} [mes] [anio], el argumento ANIO es incorrecto " >&2; exit ${E_ANIO} # mensaje de error si el año es incorrecto
+      fi;;
+   *)
+      echo "Uso: ${MISCRIPT} [mes] [anio], solo se permiten 2 argumentos" >&2; exit ${E_MASDOS} # mensaje de error para 3 o mas argumentos
+esac
+
+exit $? # imprime en consola la ultima ejecución del comando
